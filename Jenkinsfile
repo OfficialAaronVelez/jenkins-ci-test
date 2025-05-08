@@ -19,13 +19,9 @@ pipeline {
         stage('Gather Commit Info') {
             steps {
                 script {
-                    def commitMessage = sh(script: "git log -1 --pretty=%B", returnStdout: true).trim()
-                    def author = sh(script: "git log -1 --pretty=format:'%an'", returnStdout: true).trim()
-                    def commitHash = sh(script: "git rev-parse --short HEAD", returnStdout: true).trim()
-
-                    env.LAST_COMMIT_MESSAGE = commitMessage
-                    env.LAST_COMMIT_AUTHOR = author
-                    env.LAST_COMMIT_HASH = commitHash
+                    env.LAST_COMMIT_MESSAGE = sh(script: "git log -1 --pretty=%B", returnStdout: true).trim()
+                    env.LAST_COMMIT_AUTHOR  = sh(script: "git log -1 --pretty=format:%an", returnStdout: true).trim()
+                    env.LAST_COMMIT_HASH    = sh(script: "git rev-parse --short HEAD", returnStdout: true).trim()
                 }
             }
         }
@@ -55,11 +51,13 @@ pipeline {
     post {
         success {
             slackSend channel: '#welcome',
-                message: """✅ Build SUCCESS on *${env.BRANCH_NAME}* by *${env.LAST_COMMIT_AUTHOR}*
+                message: """✅ *Build SUCCESS* on *${env.BRANCH_NAME}* by *${env.LAST_COMMIT_AUTHOR}*
 📝 ${env.LAST_COMMIT_MESSAGE} (${env.LAST_COMMIT_HASH})"""
 
-            emailext subject: "Build SUCCESS on ${env.BRANCH_NAME}",
-                     body: """Branch: ${env.BRANCH_NAME}
+            emailext subject: "✅ Build SUCCESS on ${env.BRANCH_NAME}",
+                     body: """CI/CD pipeline SUCCESS
+
+Branch: ${env.BRANCH_NAME}
 Author: ${env.LAST_COMMIT_AUTHOR}
 Commit: ${env.LAST_COMMIT_MESSAGE} (${env.LAST_COMMIT_HASH})""",
                      to: "aaronvelezcoronado@gmail.com"
@@ -67,11 +65,13 @@ Commit: ${env.LAST_COMMIT_MESSAGE} (${env.LAST_COMMIT_HASH})""",
 
         failure {
             slackSend channel: '#welcome',
-                message: """❌ Build FAILED on *${env.BRANCH_NAME}* by *${env.LAST_COMMIT_AUTHOR}*
+                message: """❌ *Build FAILED* on *${env.BRANCH_NAME}* by *${env.LAST_COMMIT_AUTHOR}*
 📝 ${env.LAST_COMMIT_MESSAGE} (${env.LAST_COMMIT_HASH})"""
 
-            emailext subject: "Build FAILED on ${env.BRANCH_NAME}",
-                     body: """Branch: ${env.BRANCH_NAME}
+            emailext subject: "❌ Build FAILED on ${env.BRANCH_NAME}",
+                     body: """CI/CD pipeline FAILED
+
+Branch: ${env.BRANCH_NAME}
 Author: ${env.LAST_COMMIT_AUTHOR}
 Commit: ${env.LAST_COMMIT_MESSAGE} (${env.LAST_COMMIT_HASH})""",
                      to: "aaronvelezcoronado@gmail.com"
